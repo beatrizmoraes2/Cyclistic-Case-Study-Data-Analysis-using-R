@@ -1,0 +1,404 @@
+1 - Bar Chart Viz - Monthly Ride Volume: Casual vs. Members
+
+#Install and load tidyverse
+
+install.packages("tidyverse")
+library(tidyverse)
+
+# Path to the folder containing the files
+path <- "Cyclistic Spreadsheets"
+
+# List of .csv files in the folder
+files <- list.files(path = path, pattern = "*.csv", full.names = TRUE)
+
+# Function to read each file and add the month name
+combined_data <- files %>%
+  map_df(~ read_csv(.x) %>%
+           mutate(month = tools::file_path_sans_ext(basename(.x))))
+
+# Check if the data was combined correctly
+glimpse(combined_data)
+
+# Load ggplot2 package
+library(ggplot2)
+
+# Define the correct order of months
+month_order <- c("january", "february", "march", "april", "may")
+
+# Convert 'month' column to ordered factor
+cyclistic_data <- combined_data %>%
+  mutate(month = factor(month, levels = month_order))
+
+# Create bar chart visualization
+ggplot(cyclistic_data, aes(x = month, fill = member_casual)) +
+  geom_bar(position = "dodge") +
+  labs(title = "Monthly Ride Volume: Casual vs. Members",
+       x = "Month",
+       y = "Number of Rides",
+       fill = "User Type") +
+  theme_minimal()
+
+2 - Line Chart - Monthly Ride Trends: Casual vs. Members
+
+# Prepare aggregated data
+aggregated_data <- cyclistic_data %>%
+  group_by(month, member_casual) %>%
+  summarise(ride_count = n(), .groups = "drop")
+
+# Ensure months are in correct order
+month_order <- c("january", "february", "march", "april", "may")
+
+aggregated_data <- aggregated_data %>%
+  mutate(month = factor(month, levels = month_order))
+
+# Load package
+library(scales)
+
+# Create line chart
+ggplot(aggregated_data, aes(x = month, y = ride_count, color = member_casual, group = member_casual)) +
+  geom_line(size = 1.2) +
+  geom_point(size = 3) +
+  scale_y_continuous(labels = label_comma()) +
+  labs(title = "Monthly Ride Trends: Casual vs. Members",
+       x = "Month",
+       y = "Number of Rides",
+       color = "User Type") +
+  theme_minimal()
+
+3 - Grouped bar chart - Usage Patterns by Weekday
+
+# Extract weekday from 'started_at' column
+cyclistic_data <- cyclistic_data %>%
+  mutate(weekday = wday(started_at, label = TRUE, abbr = FALSE, week_start = 1))
+
+# Aggregate data by weekday and user type
+weekday_data <- cyclistic_data %>%
+  group_by(weekday, member_casual) %>%
+  summarise(ride_count = n(), .groups = "drop")
+
+# Create grouped bar chart
+ggplot(weekday_data, aes(x = weekday, y = ride_count, fill = member_casual)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  scale_y_continuous(labels = scales::label_comma()) +
+  labs(title = "Usage Patterns by Weekday",
+       x = "Weekday",
+       y = "Number of Rides",
+       fill = "User Type") +
+  theme_minimal()
+
+4 - Grouped bar chart - Ride Comparison: Thursday, Friday, and Saturday
+
+# Load packages
+library(dplyr)
+library(lubridate)
+
+# Filter data for selected weekdays
+filtered_data <- cyclistic_data %>%
+  mutate(weekday = wday(started_at, label = TRUE, abbr = FALSE, week_start = 1)) %>%
+  filter(weekday %in% c("Thursday", "Friday", "Saturday"))
+
+# Group by weekday and user type
+comparison_data <- filtered_data %>%
+  group_by(weekday, member_casual) %>%
+  summarise(ride_count = n(), .groups = "drop")
+
+# Create grouped bar chart
+ggplot(comparison_data, aes(x = weekday, y = ride_count, fill = member_casual)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  scale_y_continuous(labels = label_comma()) +
+  labs(title = "Ride Comparison: Thursday, Friday, and Saturday",
+       x = "Weekday",
+       y = "Number of Rides",
+       fill = "User Type") +
+  theme_minimal()
+
+5 - Cook County map - "Top 3 Most Used Stations by Group – Chicago" and "Top 10 Most Used Stations by Group – Chicago"
+
+# Install required packages
+install.packages(c("data.table", "ggplot2", "maps", "ggrepel"))
+
+# Load libraries
+library(data.table)
+library(ggplot2)
+library(maps)
+library(ggrepel)
+
+# List of files
+files <- c("march.csv", "april.csv", "may.csv")
+
+# Essential columns
+cols <- c("member_casual", "start_station_name", "start_lat", "start_lng")
+
+# Efficient reading and stacking
+bike_data <- rbindlist(
+  lapply(files, function(f) fread(f, select = cols)),
+  use.names = TRUE
+)
+
+# Standardize user groups
+bike_data[, member_casual := tolower(member_casual)]
+
+# Count number of rides per station and user type
+station_counts <- bike_data[
+  , .(rides = .N, lat = first(start_lat), lng = first(start_lng)),
+  by = .(start_station_name, member_casual)
+]
+
+# Select the top 3 most used stations per group
+top_stations <- station_counts[
+  order(-rides),
+  .SD[1:3],
+  by = member_casual
+]
+
+# Cook County map
+cook_map <- map_data("county", "illinois")[
+  map_data("county", "illinois")$subregion == "cook", ]
+
+# Plot with basic labels
+ggplot() +
+  geom_polygon(
+    data = cook_map,
+    aes(x = long, y = lat, group = group),
+    fill  = "grey95",
+    color = "white"
+  ) +
+  geom_point(
+    data = top_stations,
+    aes(x = lng, y = lat, size = rides, color = member_casual),
+    alpha = 0.8
+  ) +
+  geom_text(
+    data = top_stations,
+    aes(x = lng, y = lat, label = start_station_name),
+    size = 3,
+    nudge_y = 0.002,
+    check_overlap = TRUE
+  ) +
+  scale_color_manual(
+    values = c("member" = "steelblue", "casual" = "tomato"),
+    labels = c("Members", "Casuals")
+  ) +
+  scale_size_continuous(range = c(4, 10)) +
+  labs(
+    title    = "Top 3 Most Used Stations by Group – Chicago",
+    subtitle = "Data from March, April, and May 2025",
+    color    = "User Type",
+    size     = "Number of Rides"
+  ) +
+  theme_void(base_size = 14) +
+  theme(
+    legend.position = "bottom",
+    plot.title      = element_text(face = "bold", size = 16),
+    plot.subtitle   = element_text(size = 11)
+  )
+
+  # Select the top 10 most used stations per group
+top_stations <- station_counts[
+  order(-rides),
+  .SD[1:10],
+  by = member_casual
+]
+
+# Plot with adjusted labels
+ggplot() +
+  geom_polygon(
+    data = cook_map,
+    aes(x = long, y = lat, group = group),
+    fill  = "grey95",
+    color = "white"
+  ) +
+  geom_point(
+    data = top_stations,
+    aes(x = lng, y = lat, size = rides, color = member_casual),
+    alpha = 0.8
+  ) +
+  geom_text(
+    data = top_stations,
+    aes(x = lng, y = lat, label = start_station_name),
+    size = 3,
+    hjust = 0.5, vjust = -1,
+    check_overlap = TRUE
+  ) +
+  scale_color_manual(
+    values = c("member" = "#1f78b4", "casual" = "#e31a1c"),
+    labels = c("Member", "Casual")
+  ) +
+  scale_size_continuous(
+    range = c(3, 8),
+    breaks = c(100, 500, 1000),
+    labels = c("100", "500", "1000+")
+  ) +
+  labs(
+    title    = "Top 3 Most Used Stations by Group – Chicago",
+    subtitle = "Data from March, April, and May",
+    color    = "User",
+    size     = "Rides"
+  ) +
+  theme_void(base_size = 12) +
+  theme(
+    legend.position = "bottom",
+    legend.title    = element_text(size = 10),
+    legend.text     = element_text(size = 9),
+    plot.title      = element_text(face = "bold", size = 14, hjust = 0.5),
+    plot.subtitle   = element_text(size = 10, hjust = 0.5)
+  )
+
+# Plot with ggrepel labels
+ggplot() +
+  geom_polygon(
+    data = cook_map,
+    aes(x = long, y = lat, group = group),
+    fill  = "grey95",
+    color = "white"
+  ) +
+  geom_point(
+    data = top_stations,
+    aes(x = lng, y = lat, size = rides, color = member_casual),
+    alpha = 0.8
+  ) +
+  geom_text_repel(
+    data = top_stations,
+    aes(x = lng, y = lat, label = start_station_name),
+    size = 3,
+    max.overlaps = 30,
+    box.padding = 0.4,
+    segment.color = "grey30",
+    segment.size = 0.5
+  ) +
+  scale_color_manual(
+    values = c("member" = "#1f78b4", "casual" = "#e31a1c"),
+    labels = c("Member", "Casual")
+  ) +
+  scale_size_continuous(
+    range = c(3, 8),
+    breaks = c(100, 500, 1000),
+    labels = c("100", "500", "1000+")
+  ) +
+  labs(
+    title    = "Top 10 Most Used Stations by Group – Chicago",
+    subtitle = "Data from March, April, and May",
+    color    = "User",
+    size     = "Rides"
+  ) +
+  theme_void(base_size = 12) +
+  theme(
+    legend.position = "bottom",
+    legend.title    = element_text(size = 9),
+    legend.text     = element_text(size = 8),
+    plot.title      = element_text(face = "bold", size = 14, hjust = 0.5),
+    plot.subtitle   = element_text(size = 10, hjust = 0.5)
+  )
+
+# Save image
+ggsave("top10_stations_map.png", width = 12, height = 8, dpi = 300)
+
+# Open image in browser
+browseURL("top10_stations_map.png")
+
+6 - Heatmap - Heatmap of Rides by Hour and User Type – Combined Data
+
+# Install and load required packages
+install.packages("tidyverse")   # if not already installed
+install.packages("geosphere")   # for haversine distance calculation
+
+library(tidyverse)              # main data science package
+library(lubridate)              # for working with dates and times
+library(readr)                  # for reading CSV files
+library(ggplot2)                # for creating visualizations
+library(dplyr)                  # for data manipulation
+library(geosphere)              # for calculating distances
+
+# Read the CSV files
+march <- read_csv("march.csv")
+april <- read_csv("april.csv")
+may   <- read_csv("may.csv")
+
+# Create 'hour' column for each dataset
+march_data <- march %>% mutate(hour = hour(started_at))
+april_data <- april %>% mutate(hour = hour(started_at))
+may_data   <- may   %>% mutate(hour = hour(started_at))
+
+# Aggregate ride counts by hour and user type
+march_heatmap <- march_data %>%
+  group_by(hour, member_casual) %>%
+  summarise(rides = n(), .groups = "drop")
+
+april_heatmap <- april_data %>%
+  group_by(hour, member_casual) %>%
+  summarise(rides = n(), .groups = "drop")
+
+may_heatmap <- may_data %>%
+  group_by(hour, member_casual) %>%
+  summarise(rides = n(), .groups = "drop")
+
+# Define a plotting function for monthly heatmaps
+plot_monthly <- function(data, month_name) {
+  ggplot(data, aes(x = hour, y = member_casual, fill = rides)) +
+    geom_tile(color = "white") +
+    scale_fill_gradient(low = "#f0f9e8", high = "#084081") +
+    labs(
+      title = paste("Heatmap of Rides by Hour –", month_name),
+      x = "Hour of Day",
+      y = "User Type",
+      fill = "Number of Rides"
+    ) +
+    theme_minimal(base_size = 14) +
+    theme(
+      panel.grid = element_blank(),
+      axis.text.y = element_text(face = "bold"),
+      plot.title = element_text(face = "bold", hjust = 0.5)
+    )
+}
+
+# Generate monthly heatmaps
+plot_monthly(march_heatmap, "March")
+plot_monthly(april_heatmap, "April")
+plot_monthly(may_heatmap, "May")
+
+# Combine all datasets into one
+all_data <- bind_rows(march, april, may)
+
+# Clean and transform the data
+all_data <- all_data %>%
+  mutate(
+    started_at     = ymd_hms(started_at),
+    ended_at       = ymd_hms(ended_at),
+    hour           = hour(started_at),
+    duration       = as.numeric(difftime(ended_at, started_at, units = "mins")),
+    member_casual  = tolower(member_casual)
+  )
+
+# Calculate distance
+if (all(c("start_lng", "start_lat", "end_lng", "end_lat") %in% names(all_data))) {
+  all_data <- all_data %>%
+    mutate(
+      distance = distHaversine(
+        cbind(start_lng, start_lat),
+        cbind(end_lng, end_lat)
+      ) / 1000  # convert meters to kilometers
+    )
+} else if (!"distance" %in% names(all_data)) {
+  stop("Distance columns or lat/lng not found. Please adjust your dataset.")
+}
+
+# Final heatmap using combined data
+combined_heatmap <- all_data %>%
+  group_by(hour, member_casual) %>%
+  summarise(rides = n(), .groups = "drop")
+
+ggplot(combined_heatmap, aes(x = hour, y = member_casual, fill = rides)) +
+  geom_tile(color = "white") +
+  scale_fill_gradient(low = "#f0f9e8", high = "#084081") +
+  labs(
+    title = "Heatmap of Rides by Hour and User Type – Combined Data",
+    x = "Hour of Day",
+    y = "User Type",
+    fill = "Number of Rides"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    panel.grid = element_blank(),
+    axis.text.y = element_text(face = "bold"),
+    plot.title = element_text(face = "bold", hjust = 0.5)
+  )
