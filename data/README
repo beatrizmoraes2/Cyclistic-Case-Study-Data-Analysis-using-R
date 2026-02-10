@@ -1,0 +1,32 @@
+# Dados do Projeto
+Este projeto utiliza dados públicos fornecidos pela Motivate International Inc., sob a licença Divvy Bikes Data License Agreement (https://divvybikes.com/data-license-agreement). 
+Os dados são utilizados para análises de comportamento de usuários casuais e membros, apoiando estratégias de marketing e conversão de assinaturas anuais.
+
+# Estrutura dos Dados
+O conjunto de dados contém os seguintes campos:
+
+ride_id: identificador único da viagem
+
+rideable_type: tipo de bicicleta utilizada
+
+started_at: data e hora de início da viagem
+
+ended_at: data e hora de término da viagem
+
+start_station_name: nome da estação de origem
+
+start_station_id: identificador da estação de origem
+
+end_station_name: nome da estação de destino
+
+end_station_id: identificador da estação de destino
+
+start_lat: latitude da estação de origem
+
+start_lng: longitude da estação de origem
+
+end_lat: latitude da estação de destino
+
+end_lng: longitude da estação de destino
+
+member_casual: tipo de usuário (membro ou casual)
