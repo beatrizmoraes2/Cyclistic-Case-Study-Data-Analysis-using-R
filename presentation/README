@@ -1,3 +1,5 @@
+(PT - Português)
+
 # Apresentação para Partes Interessadas
 Este documento em PDF reúne os principais resultados e recomendações do projeto de marketing baseado em dados da Motivate International Inc.
 
@@ -52,3 +54,59 @@ Monitoramento e otimização
 
 A apresentação mostra como relatórios estratégicos e ações direcionadas podem aumentar a conversão de usuários casuais em assinantes anuais, 
 além de recomendar o uso de modelos preditivos e dashboards em tempo real para otimizar decisões.
+
+(EN - English)
+
+# Presentation for Stakeholders
+This PDF document brings together the main results and recommendations of the marketing project based on data from Motivate International Inc.
+
+Topics covered:
+
+- Marketing Objective
+
+- Dataset
+
+- Executive Summary
+
+Main Insights
+
+Key Recommendation
+
+Next Steps
+
+- Methodology
+
+Data cleaning and preprocessing
+
+Key variables analyzed
+
+Tools used
+
+- Analysis
+
+Usage patterns: Casuals x Members
+
+Seasonal and hourly behavior
+
+Frequency by day of the week
+
+Trip profile (duration × distance)
+
+Usage zones
+
+- Marketing Action Recommendations
+
+Seasonal and segmented offers
+
+Personalized communication
+
+Geographic incentives
+
+Gamification and engagement
+
+Monitoring and optimization
+
+- Limitations
+
+The presentation shows how strategic reports and targeted actions can increase the conversion of casual users into annual subscribers,
+as well as recommending the use of predictive models and real-time dashboards to optimize decisions.
