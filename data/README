@@ -1,5 +1,5 @@
 # Dados do Projeto
-Este projeto utiliza dados públicos fornecidos pela Motivate International Inc., sob a licença Divvy Bikes Data License Agreement (https://divvybikes.com/data-license-agreement). 
+Este projeto utiliza dados públicos fornecidos pela Motivate International Inc. (https://divvybikes-marketing-staging.lyft.net/system-data), sob a licença Divvy Bikes Data License Agreement (https://divvybikes.com/data-license-agreement). 
 Os dados são utilizados para análises de comportamento de usuários casuais e membros, apoiando estratégias de marketing e conversão de assinaturas anuais.
 
 # Estrutura dos Dados
